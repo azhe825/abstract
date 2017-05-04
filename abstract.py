@@ -12,6 +12,7 @@ import os
 from demos import cmd
 import urllib2
 import random
+import json
 
 def loadfile(f1,f2):
     with open("./" + str(f1), "r") as csvfile:
@@ -59,7 +60,8 @@ def searchieee(f1):
 
     with open("./" + str(f1), "r") as csvfile:
         content1 = [x for x in csv.reader(csvfile, delimiter=',')]
-    fields = ["Document Title", "Abstract", "Year", "PDF Link", "Authors", "Source", "label", "Round 2"]
+    # fields = ["Document Title", "Abstract", "Year", "PDF Link", "Authors", "Source", "label", "Round 2"]
+    fields = ["Document Title", "Abstract", "Year", "PDF Link", "Authors", "Source", "code", "time"]
     body1 = {}
     header1 = content1[0]
     for field in fields:
@@ -221,7 +223,49 @@ def searchacm2(f1):
 
             time.sleep(random.randint(2, 10))
 
+# 27279b4232ff09127fcb7ada775b85fe
+def searchspringer(f1,key):
 
+    with open("./" + str(f1), "r") as csvfile:
+        content1 = [x for x in csv.reader(csvfile, delimiter=',')]
+    fields = ["Document Title", "Abstract", "Year", "PDF Link", "Authors", "Source", "label", "Round 2"]
+    body1 = {}
+    header1 = content1[0]
+    for field in fields:
+        ind = header1.index(field)
+        body1[field] = [c[ind].strip() for c in content1[1:]]
+
+    for i, title in enumerate(body1["Document Title"]):
+        if body1["Year"][i]=="notSpringer":
+            title=title.split("\n")[0].strip()
+            qref = "http://api.springer.com/metadata/json?q=title:%22" + "%20".join([j.strip("?:,.\"\'").replace("?","%27") for j in title.split()]) +"%22&api_key="+key
+            req = urllib2.Request(qref)
+            req.add_header('User-agent', 'Mozilla/5.0 (Linux i686)')
+            response = urllib2.urlopen(req)
+            texts = json.loads(response.read())
+            if texts['result'][0]['total']=='0':
+                body1["Year"][i] = "notSpringer"
+                continue
+            try:
+                body1["Abstract"][i] = texts['records'][0]['abstract'].strip().encode("ascii", "ignore")
+                body1["PDF Link"][i] = texts['records'][0]['url'][0]['value'].encode("ascii", "ignore")
+                body1["Year"][i] = texts['records'][0]['publicationDate'].split('-')[0].encode("ascii", "ignore")
+            except:
+
+                continue
+
+
+
+
+            with open("./out3.csv", "wb") as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=',')
+                csvwriter.writerow(fields)
+                ## sort before export
+                ##
+                for ind in xrange(len(body1["Year"])):
+                    csvwriter.writerow([body1[field][ind] for field in fields])
+
+            time.sleep(random.randint(2, 10))
 
 
 def searchcrossref(f1):
