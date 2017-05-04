@@ -219,7 +219,7 @@ def searchacm2(f1):
                 for ind in xrange(len(body1["Year"])):
                     csvwriter.writerow([body1[field][ind] for field in fields])
 
-            time.sleep(random.randint(2, 10)))
+            time.sleep(random.randint(2, 10))
 
 
 
